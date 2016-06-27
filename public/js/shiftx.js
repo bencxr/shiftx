@@ -19,7 +19,7 @@ shiftX.controller('mainController', ['$rootScope', '$scope', '$http', '$location
         }
         $http.get(url)
         .success(function(data) {
-            $scope.rate = data.rate;
+            $scope.rate = Math.round(data.rate*10000)/10000;
             $scope.id = data.id;
         })
         .error(function(data) {
@@ -48,6 +48,12 @@ shiftX.config(function($routeProvider, $locationProvider) {
         .when('/', {
             templateUrl : 'templates/home.html',
             controller  : 'mainController'
+        })
+
+        // route for the home page
+        .when('/shift/:id', {
+            templateUrl : 'templates/shift.html',
+            controller  : 'shiftController'
         });
 
     $locationProvider.html5Mode(true);

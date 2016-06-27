@@ -1,8 +1,8 @@
-.u-marginTop60 {
-    margin-top: 60px;
+.u-marginTop80 {
+    margin-top: 80px;
 }
 .main-logo {
-	width: 100px;
+	height: 120px;
 }
 .u-leftAlign {
     text-align: left;
@@ -15,9 +15,16 @@
 	color: #EF5550;
 }
 .u-390width {
-	width: 390px !important;
+	width: 420px !important;
+}
+.mainContainer {
+	margin-top: 80px;
 }
 
+.arrow {
+	width: 100px;
+	cursor: pointer;
+}
 
 body {
 	color: #333333;
