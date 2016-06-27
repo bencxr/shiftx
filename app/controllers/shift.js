@@ -12,6 +12,8 @@ exports.newShift = co(function *newShift(req, res) {
   var pair = req.body.pair;
   // TODO: Check if pair exists in pair table
 
+  var withdrawAddress = req.body.withdrawAddress; // todo: validate?
+
   var rate = 0.21; // get rate!
   var depositAddress = 'bitcoinorethaddress'; // get this from bitgojs!
 
@@ -20,7 +22,8 @@ exports.newShift = co(function *newShift(req, res) {
     rate: rate,
     state: 'new',
     expires: new Date(new Date().getTime() + 15 * 60 * 1000), // 15 minutes to send
-    depositAddress: depositAddress
+    depositAddress: depositAddress,
+    withdrawAddress: withdrawAddress
   });
 
   return shift;
