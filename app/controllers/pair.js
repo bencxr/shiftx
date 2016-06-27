@@ -17,6 +17,14 @@ co(function *initializePairs() {
   yield Pair.update({pair: 'ethbtc'}, {rate: 0.11}, {upsert: true});
 })();
 
+var refreshIteration = function(){
+  return exports.refreshPair()
+  .then(function(){
+    return Promise.delay(1000); // wait for one second
+  })
+  .then(refreshIteration);
+};
+
 exports.getPair = co(function *getPair(req, res) {
   var pairId = req.params.id;
   if (typeof(pairId) !== 'string') {
@@ -60,4 +68,8 @@ exports.refreshPair = co(function *refreshPair(req, res) {
   // yield them at once to pretend there's atomicity, though there's really not
   yield btcethPromise;
   yield ethbtcPromise;
+
+  return data.result.XETHXXBT;
 });
+
+refreshIteration();
