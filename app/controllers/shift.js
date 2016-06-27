@@ -1,6 +1,5 @@
 var Promise = require('bluebird');
 var co = Promise.coroutine;
-var request = require('superagent');
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 var BitGoJS = require('bitgo');
@@ -45,7 +44,7 @@ exports.newShift = co(function *newShift(req, res) {
 
     return shift;
   } else if (mongoPair.pair === 'ethbtc') {
-    var wallet = yield bitgo.eth().wallets().generateWallet();
+    var wallet = yield bitgo.eth().wallets().generateWallet({ passphrase: 'secretbitgopass' });
     var depositAddress = wallet.wallet.id();
 
     var shift = yield Shift.create({

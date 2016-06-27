@@ -1,6 +1,5 @@
 var Promise = require('bluebird');
 var co = Promise.coroutine;
-var request = require('superagent');
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 var KrakenClient = require('kraken-api');

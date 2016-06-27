@@ -32,5 +32,5 @@ app.use('*', function(req,res) {
 });
 
 var port = process.env.PORT || 4000;        // set our port
-app.listen(port);
+module.exports = app.listen(port);
 console.log("Listening on port 4000..");
