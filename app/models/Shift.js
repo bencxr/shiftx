@@ -1,18 +1,14 @@
 var mongoose = require('mongoose');
-mongoose.Promise = require('bluebird');
-var _ = require('lodash');
 var Promise = require('bluebird');
+mongoose.Promise = Promise;
 var co = Promise.coroutine;
+var _ = require('lodash');
 
-var pairs = ['ethbtc', 'btceth'];
 var states = ['new', 'unconfirmed', 'completed', 'error'];
 var reasons = ['waiting', 'mismatchedamount'];
 
 // A shift represents a trade request
 var shiftSchema = new mongoose.Schema({
-  // Pair of the shift (e.g. ethbtc means it will shift from ETH to BTC)
-  pair: { type: String, enum: pairs },
-
   // Rate of the shift, e.g. for ethbtc it's going to be number of btc that 1 eth will buy
   rate: { type: Number },
 
@@ -44,7 +40,6 @@ shiftSchema.methods = {
 };
 
 shiftSchema.statics = {
-  pairs: _.zipObject(pairs, pairs),
   states: _.zipObject(states, states),
   reasons: _.zipObject(reasons, reasons),
 };

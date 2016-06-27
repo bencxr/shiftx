@@ -6,12 +6,11 @@ mongoose.Promise = require('bluebird');
 
 var api = require('../api');
 var Shift = require('../models/Shift');
+var Pair = require('../models/Pair');
 
 exports.newShift = co(function *newShift(req, res) {
   var pair = req.body.pair;
-  if (!pair || !Shift.pairs[pair]) {
-    throw api.Error(400, "invalid pair");
-  }
+  // TODO: Check if pair exists in pair table
 
   var rate = 0.21; // get rate!
   var depositAddress = 'bitcoinorethaddress'; // get this from bitgojs!
