@@ -25,7 +25,10 @@ var shiftSchema = new mongoose.Schema({
   expires: { type: Date },
 
   // The address the customer is supposed to deposit to in order to perform the shift
-  depositAddress: { type: String }
+  depositAddress: { type: String },
+
+  // The address provided by the customer to send the converted funds to
+  withdrawAddress: { type: String }
 });
 
 shiftSchema.methods = {

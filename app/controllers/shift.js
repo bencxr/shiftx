@@ -19,7 +19,7 @@ exports.newShift = co(function *newShift(req, res) {
     pair: pair,
     rate: rate,
     state: 'new',
-    expires: new Date(new Date().getTime() + 15 * 60 * 1000), // 10 minutes to send
+    expires: new Date(new Date().getTime() + 15 * 60 * 1000), // 15 minutes to send
     depositAddress: depositAddress
   });
 
