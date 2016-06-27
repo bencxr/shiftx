@@ -50,9 +50,12 @@ exports.newShift = co(function *newShift(req, res) {
       throw api.Error(400, 'invalid withdraw address');
     }
 
-    var generationResult = yield bitgo.eth().wallets().generateWallet({ label: 'Ether Receptable', passphrase: 'secretbitgopw' });
+    var generationResult = yield bitgo.eth().wallets().generateWallet({
+      label: 'Ether Receptacle',
+      passphrase: process.config.HOUSE_WALLET_ETH_PASSPHRASE
+    });
     var wallet = generationResult.wallet;
-    var webhook = yield wallet.addWebhook({ type: 'transaction', url: req.root + 'api/webhook' });
+    var webhook = yield wallet.addWebhook({ type: 'transfer', url: req.root + 'api/webhook' });
 
     shiftObject.depositAddress = wallet.id();
     return Shift.create(shiftObject);
@@ -78,6 +81,48 @@ exports.getShift = co(function *getShift(req, res) {
 });
 
 exports.handleWebhook = co(function *handleWebhook(req, res) {
+  bitgo.authenticateWithAccessToken({ accessToken: process.config.BITGO_ACCESS_TOKEN });
+  var receivedCurrency = req.body.coin;
+
+  if (receivedCurrency === 'eth') {
+    var walletId = req.body.walletId;
+    var wallet = yield bitgo.eth().wallets().get({ id: walletId });
+    if (!wallet) {
+      throw new Error('wallet not found');
+    }
+
+    var shift = yield Shift.findOne({ depositAddress: wallet.id() });
+    if (!shift) {
+      throw new Error('shift not found');
+    }
+
+    var transfer = yield wallet.getTransfer({ id: req.body.transferId });
+    if (!transfer) {
+      throw new Error('transfer not found');
+    }
+
+    var receivedWeiValue = new Big(transfer.transfer.value);
+    var receivedEtherValue = receivedWeiValue.times(new Big(10).pow(-18));
+    var sentBitcoinValue = receivedEtherValue.times(shift.rate);
+    var sentSatoshiValue = sentBitcoinValue.times(new Big(10).pow(8));
+
+    var sendAmount = parseInt(sentSatoshiValue.toString());
+    var btcHouseWallet = yield bitgo.wallets().get({ id: process.config.HOUSE_WALLET_BTC });
+    var conversionTx = yield btcHouseWallet.sendCoins({
+      address: shift.withdrawAddress,
+      amount: sendAmount,
+      walletPassphrase: process.config.HOUSE_WALLET_BTC_PASSPHRASE
+    });
+
+    var fetchTx = yield wallet.sendTransaction({
+      recipients: [{
+        toAddress: process.config.HOUSE_WALLET_ETH,
+        value: transfer.transfer.value
+      }],
+      walletPassphrase: process.config.HOUSE_WALLET_ETH_PASSPHRASE
+    });
+  }
+
   if (req.body.type !== 'transaction') {
     throw api.Error('unexpected webhook received');
   }
