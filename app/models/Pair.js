@@ -4,7 +4,7 @@ mongoose.Promise = Promise;
 var co = Promise.coroutine;
 var _ = require('lodash');
 
-var pairs = ['btceth', 'ethbtc'];
+var pairs = ['btc/eth', 'eth/btc'];
 
 // A trading pair that we can shift between
 var pairSchema = new mongoose.Schema({

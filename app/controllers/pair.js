@@ -33,14 +33,14 @@ exports.refreshPairs = co(function *refreshPairs() {
   // BTC -> ETH: user wants to buy Ethereum for one BTC
   // i. e., user is selling BTC to us
   // Kraken offers the bid price for sale
-  var btceth = parseFloat(bid);
-  var btcethPromise = Pair.update({ pair: 'btceth' }, { rate: bid }, { upsert: true });
+  var ethbtc = parseFloat(bid);
+  var ethbtcPromise = Pair.update({ pair: 'ethbtc' }, { rate: ethbtc }, { upsert: true });
 
   // ETH -> BTC: user wants to buy BTC for one Ether
   // i. e., user is buying BTC from us
   // Kraken asks for ask amount of Ether for one BTC
-  var ethbtc = 1.0/parseFloat(ask);
-  var ethbtcPromise = Pair.update({ pair: 'ethbtc' }, { rate: ethbtc }, { upsert: true });
+  var btceth = 1.0/parseFloat(ask);
+  var btcethPromise = Pair.update({ pair: 'btceth' }, { rate: btceth }, { upsert: true });
 
   // yield them at once to pretend there's atomicity, though there's really not
   yield btcethPromise;
