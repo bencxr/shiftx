@@ -30,8 +30,9 @@ exports.getPair = co(function *getPair(req, res) {
   if (typeof(pairId) !== 'string') {
     throw api.Error(400, "invalid pair");
   }
-  
+
   var pair = yield Pair.findOne({ pair: pairId.toLowerCase() });
+
   if (!pair) {
     throw api.Error(404, "pair not found");
   }
