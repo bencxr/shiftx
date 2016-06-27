@@ -6,7 +6,7 @@ var Promise = require('bluebird');
 var pairController = require('../controllers/pair');
 
 (function refreshPrices() {
-  return pairController.refreshPair()
+  return pairController.refreshPairs()
   .then(function() {
     return Promise.delay(1000); // wait for one second
   })

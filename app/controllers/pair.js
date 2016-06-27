@@ -24,15 +24,7 @@ exports.getPair = co(function *getPair(req, res) {
   return pair;
 });
 
-// allow overwrites
-exports.createPair = co(function *createPair(req) {
-  var pairName = req.params.pair;
-  var pairValue = req.params.value;
-
-  return Pair.update({pair: pairName}, {rate: pairValue}, {upsert: true});
-});
-
-exports.refreshPair = co(function *refreshPair(req, res) {
+exports.refreshPairs = co(function *refreshPairs() {
   var data = yield kraken.apiAsync('Ticker', {"pair": 'ETHXBT'});
 
   var ask = data.result.XETHXXBT.a[0]; // how much Ether Kraken asks from us for 1 BTC
