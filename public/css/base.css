@@ -1,0 +1,24 @@
+.u-marginTop60 {
+    margin-top: 60px;
+}
+.main-logo {
+	width: 100px;
+}
+.u-leftAlign {
+    text-align: left;
+}
+
+.u-alignCenter {
+    text-align: center;
+}
+.u-colorRed {
+	color: #EF5550;
+}
+.u-390width {
+	width: 390px !important;
+}
+
+
+body {
+	color: #333333;
+}
