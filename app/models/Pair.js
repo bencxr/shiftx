@@ -4,10 +4,12 @@ mongoose.Promise = Promise;
 var co = Promise.coroutine;
 var _ = require('lodash');
 
+var pairs = ['btceth', 'ethbtc'];
+
 // A trading pair that we can shift between
 var pairSchema = new mongoose.Schema({
   // Pair of the shift (e.g. ethbtc means it will shift from ETH to BTC)
-  pair: { type: String, unique: true },
+  pair: { type: String, enum: pairs, unique: true },
 
   // Rate of the pair
   rate: { type: Number }
