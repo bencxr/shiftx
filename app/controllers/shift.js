@@ -20,10 +20,15 @@ exports.newShift = co(function *newShift(req, res) {
   }
 
   var withdrawAddress = req.body.withdrawAddress; // TODO: validate it?
-
-  var rate = mongoPair.rate; // get rate!
-
   bitgo.authenticateWithAccessToken({ accessToken: process.config.BITGO_ACCESS_TOKEN });
+
+  var shiftObject = {
+    pair: mongoPair.pair,
+    rate: mongoPair.rate,
+    state: 'new',
+    expires: new Date(new Date().getTime() + 15 * 60 * 1000), // 15 minutes to send
+    withdrawAddress: withdrawAddress
+  };
 
   if (mongoPair.pair === 'btceth') {
     // fetch wallet and create deposit address
@@ -33,30 +38,14 @@ exports.newShift = co(function *newShift(req, res) {
     }
     var depositAddress = yield wallet.createAddress({ chain: 0 }); // TODO check return value
 
-    var shift = yield Shift.create({
-      pair: pairId,
-      rate: rate,
-      state: 'new',
-      expires: new Date(new Date().getTime() + 15 * 60 * 1000), // 15 minutes to send
-      depositAddress: depositAddress.address,
-      withdrawAddress: withdrawAddress
-    });
-
-    return shift;
+    shiftObject.depositAddress = depositAddress.address;
+    return Shift.create(shiftObject);
   } else if (mongoPair.pair === 'ethbtc') {
-    var wallet = yield bitgo.eth().wallets().generateWallet({ passphrase: 'secretbitgopass' });
+    var wallet = yield bitgo.eth().wallets().generateWallet({ label: 'Ether Receptable', passphrase: 'secretbitgopw' });
     var depositAddress = wallet.wallet.id();
 
-    var shift = yield Shift.create({
-      pair: pairId,
-      rate: rate,
-      state: 'new',
-      expires: new Date(new Date().getTime() + 15 * 60 * 1000), // 15 minutes to send
-      depositAddress: depositAddress,
-      withdrawAddress: withdrawAddress
-    });
-
-    return shift;
+    shiftObject.depositAddress = depositAddress;
+    return Shift.create(shiftObject);
   }
 
 });
