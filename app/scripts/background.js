@@ -10,5 +10,9 @@ var pairController = require('../controllers/pair');
   .then(function() {
     return Promise.delay(1000); // wait for one second
   })
+  .catch(function(error) {
+    console.dir(error);
+    return Promise.delay(10000); // wait for ten seconds
+  })
   .then(refreshPrices);
 })();
