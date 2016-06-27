@@ -5,6 +5,8 @@ var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 var BitGoJS = require('bitgo');
 var bitgo = new BitGoJS.BitGo();
+var BN = require("ethereumjs-util").BN;
+var _ = require('lodash');
 
 var api = require('../api');
 var Shift = require('../models/Shift');
@@ -59,4 +61,81 @@ exports.getShift = co(function *getShift(req, res) {
   }
 
   return shift;
+});
+
+exports.handleWebhook = co(function *handleWebhook(req, res) {
+  if (req.body.type !== 'transaction') {
+    throw api.Error('unexpected webhook received');
+  }
+
+  var walletId = req.body.walletId;
+
+  // is this a webhook alerting us of an ethereum transaction or a bitcoin transaction?
+  if (walletId == process.config.HOUSE_WALLET_BTC) { // btc
+    var txHash = req.body.hash; // TODO validate
+
+    var wallet = yield bitgo.wallets().get({ id: process.config.HOUSE_WALLET_BTC });
+    if (!wallet) {
+      throw api.Error(500, 'error fetching bitgo wallet');
+    }
+
+    var tx = wallet.getTransaction({ "id": txHash });
+    if (!tx) {
+      throw api.Error(400, 'transaction does not exist');
+    }
+
+    // check number of confirmations
+
+    if (tx.confirmations > 1) {
+      // short circuit, because we don't want to send multiple cross-currency transfers
+      return;
+    }
+
+    var outputAddresses = _.filter(tx.outputs, function(out) {
+      return out.chain === 0; // we don't want change outputs, only the single send output
+    });
+    if (!outputAddresses || outputAddresses.length > 1) {
+      throw api.Error(500, 'should only be one send output address');
+    }
+    
+    var outputAddress = outputAddress[0].account;
+    var outputValue = outputAddress[0].value;
+
+    var shift = yield Shift.findOne({ state: Shift.states.new, depositAddress: outputAddress });
+    if (!shifts) {
+      throw api.Error(400, 'no shifts found');
+    }
+
+    // if it has more than 1 confirmation, then we send out the transaction
+    if (tx.confirmations === 1) {
+      // since we received a webhook for a bitcoin transaction, that must mean
+      // we're supposed to send out a transaction to an ethereum withdraw address
+      var rate = shift.rate;
+      var outputValueInBTC = outputValue / 1e8;
+      var sendAmountInEther = outputValueInBTC * shift.rate;
+      var sendAmountInWei = new BN(sendAmountInEther, 10).multiply(new BN(1e18, 10)).toString();
+
+      var ethWallet = yield bitgo.eth().wallets().get({ id: process.config.HOUSE_WALLET_ETH });
+      if (!ethWallet) {
+        throw api.Error(500, 'could not find house eth wallet');
+      }
+      var txSendResult = yield ethWallet.sendTransaction(
+        { recipients: [ { toAddress: shift.withdrawAddress, value: sendAmountInWei }], walletPassphrase: 'daodaodao' },
+      );
+
+      if (!txSendResult) {
+        throw api.Error(500, 'error sending transaction to ethereum address');
+      }
+      return txSendResult;
+    }
+
+    // if it has 0 confirmations, then we simply update the shift and wait for it to be confirmed
+    if (tx.confirmations === 0) {
+      return yield shift.update({ state: Shift.states.unconfirmed });
+    }
+
+  } else if (walletId == process.config.HOUSE_WALLET_ETH) { // eth
+
+  }
+  throw api.Error('webhook for unknown walletId' + req.body.walletId);
 });
