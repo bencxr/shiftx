@@ -9,22 +9,6 @@ var kraken = Promise.promisifyAll(new KrakenClient(process.config.KRAKEN_API_CLI
 var api = require('../api');
 var Pair = require('../models/Pair');
 
-// initialize initial pair
-
-co(function *initializePairs() {
-  // imperfect division. 11 * 0.11 != 1
-  yield Pair.update({pair: 'btceth'}, {rate: 11}, {upsert: true});
-  yield Pair.update({pair: 'ethbtc'}, {rate: 0.11}, {upsert: true});
-})();
-
-var refreshIteration = function(){
-  return exports.refreshPair()
-  .then(function(){
-    return Promise.delay(1000); // wait for one second
-  })
-  .then(refreshIteration);
-};
-
 exports.getPair = co(function *getPair(req, res) {
   var pairId = req.params.id;
   if (typeof(pairId) !== 'string') {
@@ -71,5 +55,3 @@ exports.refreshPair = co(function *refreshPair(req, res) {
 
   return data.result.XETHXXBT;
 });
-
-refreshIteration();

@@ -6,6 +6,8 @@ var routes = require('./app/routes');
 var cors = require('cors');
 
 require('./config.js');
+require('./app/scripts/initialization');
+require('./app/scripts/background');
 
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/shiftx'); // connect to our database
@@ -25,6 +27,8 @@ app.use(bodyParser.json());
 
 app.use('/api', routes);
 app.use(express.static(path.join(__dirname, 'public')));
+
+
 
 var port = process.env.PORT || 4000;        // set our port
 app.listen(port);
