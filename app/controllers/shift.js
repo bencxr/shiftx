@@ -10,6 +10,7 @@ var _ = require('lodash');
 var api = require('../api');
 var Shift = require('../models/Shift');
 var Pair = require('../models/Pair');
+var validator = require('../utils/validator');
 
 exports.newShift = co(function *newShift(req, res) {
   var pairId = req.body.pair; // TODO better sanitation
@@ -31,6 +32,10 @@ exports.newShift = co(function *newShift(req, res) {
   };
 
   if (mongoPair.pair === 'btceth') {
+    if (!validator.isValidEthereumAddress(withdrawAddress)) {
+      throw api.Error(400, 'invalid withdraw address');
+    }
+
     // fetch wallet and create deposit address
     var wallet = yield bitgo.wallets().get({ id: process.config.HOUSE_WALLET_BTC });
     if (!wallet) {
@@ -41,6 +46,10 @@ exports.newShift = co(function *newShift(req, res) {
     shiftObject.depositAddress = depositAddress.address;
     return Shift.create(shiftObject);
   } else if (mongoPair.pair === 'ethbtc') {
+    if (!validator.isValidBitcoinAddress(withdrawAddress)) {
+      throw api.Error(400, 'invalid withdraw address');
+    }
+
     var wallet = yield bitgo.eth().wallets().generateWallet({ label: 'Ether Receptable', passphrase: 'secretbitgopw' });
 
     shiftObject.depositAddress = wallet.wallet.id();
