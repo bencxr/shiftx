@@ -42,6 +42,7 @@ exports.newShift = co(function *newShift(req, res) {
       throw api.Error(500, 'error fetching bitgo wallet');
     }
     var depositAddress = yield wallet.createAddress({ chain: 0 }); // TODO check return value
+    var webhook = yield wallet.addWebhook({ type: 'transaction', url: req.root + 'api/webhook' });
 
     shiftObject.depositAddress = depositAddress.address;
     return Shift.create(shiftObject);
@@ -91,7 +92,7 @@ exports.handleWebhook = co(function *handleWebhook(req, res) {
       throw new Error('wallet not found');
     }
 
-    var shift = yield Shift.findOne({ depositAddress: wallet.id() });
+    var shift = yield Shift.findOneAndUpdate({ depositAddress: wallet.id(), state: 'new' }, { state: 'unconfirmed' });
     if (!shift) {
       throw new Error('shift not found');
     }
@@ -106,7 +107,7 @@ exports.handleWebhook = co(function *handleWebhook(req, res) {
     var sentBitcoinValue = receivedEtherValue.times(shift.rate);
     var sentSatoshiValue = sentBitcoinValue.times(new Big(10).pow(8));
 
-    var sendAmount = parseInt(sentSatoshiValue.toString());
+    var sendAmount = parseInt(sentSatoshiValue.toFixed());
     var btcHouseWallet = yield bitgo.wallets().get({ id: process.config.HOUSE_WALLET_BTC });
     var conversionTx = yield btcHouseWallet.sendCoins({
       address: shift.withdrawAddress,
@@ -121,78 +122,46 @@ exports.handleWebhook = co(function *handleWebhook(req, res) {
       }],
       walletPassphrase: process.config.HOUSE_WALLET_ETH_PASSPHRASE
     });
-  }
 
-  if (req.body.type !== 'transaction') {
-    throw api.Error('unexpected webhook received');
-  }
-
-  var walletId = req.body.walletId;
-
-  // is this a webhook alerting us of an ethereum transaction or a bitcoin transaction?
-  if (walletId == process.config.HOUSE_WALLET_BTC) { // btc
-    var txHash = req.body.hash; // TODO validate
+  } else if (receivedCurrency === 'bitcoin') {
+    var walletId = req.body.walletId;
+    if (walletId !== process.config.HOUSE_WALLET_BTC) {
+      throw new Error('incorrect wallet id');
+    }
 
     var wallet = yield bitgo.wallets().get({ id: process.config.HOUSE_WALLET_BTC });
     if (!wallet) {
-      throw api.Error(500, 'error fetching bitgo wallet');
+      throw new Error('wallet not found');
     }
 
-    var tx = wallet.getTransaction({ "id": txHash });
-    if (!tx) {
-      throw api.Error(400, 'transaction does not exist');
-    }
+    var transaction = yield wallet.getTransaction({ id: req.body.hash });
 
-    // check number of confirmations
-
-    if (tx.confirmations > 1) {
-      // short circuit, because we don't want to send multiple cross-currency transfers
-      return;
-    }
-
-    var outputAddresses = _.filter(tx.outputs, function(out) {
-      return out.chain === 0; // we don't want change outputs, only the single send output
-    });
-    if (!outputAddresses || outputAddresses.length > 1) {
+    var outputs = _.filter(transaction.outputs, { chain: 0 });
+    if (outputs.length != 1) {
       throw api.Error(500, 'should only be one send output address');
     }
-    
-    var outputAddress = outputAddress[0].account;
-    var outputValue = outputAddress[0].value;
 
-    var shift = yield Shift.findOne({ state: Shift.states.new, depositAddress: outputAddress });
-    if (!shifts) {
-      throw api.Error(400, 'no shifts found');
+    var output = outputs[0];
+    var receptacle = output.account;
+
+    var shift = yield Shift.findOneAndUpdate({ depositAddress: receptacle, state: 'new' }, { state: 'unconfirmed' });
+    if (!shift) {
+      throw new Error('shift not found');
     }
 
-    // if it has more than 1 confirmation, then we send out the transaction
-    if (tx.confirmations === 1) {
-      // since we received a webhook for a bitcoin transaction, that must mean
-      // we're supposed to send out a transaction to an ethereum withdraw address
-      var multiplier = 1e10 * shift.rate;
-      sendAmountInWei = new Big(outputValue).multiply(new Big(multiplier));
+    var receivedSatoshiValue = new Big(output.value);
+    var receivedBitcoinValue = receivedSatoshiValue.times(new Big(10).pow(-8));
+    var sentEtherValue = receivedBitcoinValue.times(shift.rate);
+    var sentWeiValue = sentEtherValue.times(new Big(10).pow(18));
 
-      var ethWallet = yield bitgo.eth().wallets().get({ id: process.config.HOUSE_WALLET_ETH });
-      if (!ethWallet) {
-        throw api.Error(500, 'could not find house eth wallet');
-      }
-      var txSendResult = yield ethWallet.sendTransaction(
-        { recipients: [ { toAddress: shift.withdrawAddress, value: sendAmountInWei }], walletPassphrase: process.config.HOUSE_WALLET_BTC_PASSPHRASE }
-      );
-
-      if (!txSendResult) {
-        throw api.Error(500, 'error sending transaction to ethereum address');
-      }
-      return txSendResult;
-    }
-
-    // if it has 0 confirmations, then we simply update the shift and wait for it to be confirmed
-    if (tx.confirmations === 0) {
-      return yield shift.update({ state: Shift.states.unconfirmed });
-    }
-
-  } else if (walletId == process.config.HOUSE_WALLET_ETH) { // eth
-
+    var sendAmount = sentWeiValue.toFixed();
+    var ethHouseWallet = yield bitgo.eth().wallets().get({ id: process.config.HOUSE_WALLET_ETH });
+    var conversionTx = yield ethHouseWallet.sendTransaction({
+      recipients: [{
+        toAddress: shift.withdrawAddress,
+        value: sendAmount
+      }],
+      walletPassphrase: process.config.HOUSE_WALLET_ETH_PASSPHRASE
+    });
   }
-  throw api.Error('webhook for unknown walletId' + req.body.walletId);
 });
