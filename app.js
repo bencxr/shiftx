@@ -25,6 +25,13 @@ app.use(bodyParser.json());
 app.use(logger('dev'));
 app.use(bodyParser.json());
 
+// get external URL root
+app.enable('trust proxy'); // to maintain HTTPS protocol detection through ngrok and other proxies
+app.use(function(req, res, next) {
+  req.root = req.protocol + '://' + req.get('host') + '/';
+  next();
+});
+
 app.use('/api', routes);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('*', function(req,res) {

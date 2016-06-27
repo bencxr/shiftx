@@ -50,9 +50,11 @@ exports.newShift = co(function *newShift(req, res) {
       throw api.Error(400, 'invalid withdraw address');
     }
 
-    var wallet = yield bitgo.eth().wallets().generateWallet({ label: 'Ether Receptable', passphrase: 'secretbitgopw' });
+    var generationResult = yield bitgo.eth().wallets().generateWallet({ label: 'Ether Receptable', passphrase: 'secretbitgopw' });
+    var wallet = generationResult.wallet;
+    var webhook = yield wallet.addWebhook({ type: 'transaction', url: req.root + 'api/webhook' });
 
-    shiftObject.depositAddress = wallet.wallet.id();
+    shiftObject.depositAddress = wallet.id();
     return Shift.create(shiftObject);
   }
 });
