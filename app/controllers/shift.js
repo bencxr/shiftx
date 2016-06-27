@@ -110,7 +110,6 @@ exports.handleWebhook = co(function *handleWebhook(req, res) {
     if (tx.confirmations === 1) {
       // since we received a webhook for a bitcoin transaction, that must mean
       // we're supposed to send out a transaction to an ethereum withdraw address
-      var rate = shift.rate;
       var outputValueInBTC = outputValue / 1e8;
       var sendAmountInEther = outputValueInBTC * shift.rate;
       var sendAmountInWei = new BN(sendAmountInEther, 10).multiply(new BN(1e18, 10)).toString();
@@ -120,7 +119,7 @@ exports.handleWebhook = co(function *handleWebhook(req, res) {
         throw api.Error(500, 'could not find house eth wallet');
       }
       var txSendResult = yield ethWallet.sendTransaction(
-        { recipients: [ { toAddress: shift.withdrawAddress, value: sendAmountInWei }], walletPassphrase: 'daodaodao' },
+        { recipients: [{ toAddress: shift.withdrawAddress, value: sendAmountInWei }], walletPassphrase: 'daodaodao' }
       );
 
       if (!txSendResult) {

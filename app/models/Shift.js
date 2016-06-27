@@ -4,12 +4,7 @@ mongoose.Promise = Promise;
 var co = Promise.coroutine;
 var _ = require('lodash');
 
-var states = {
-  new: 'new',
-  unconfirmed: 'unconfirmed',
-  completed: 'completed',
-  error: 'error'
-};
+var states = ['new', 'unconfirmed', 'completed', 'error'];
 var reasons = ['waiting', 'mismatchedamount'];
 
 // A shift represents a trade request
