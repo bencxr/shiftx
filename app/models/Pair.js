@@ -7,7 +7,7 @@ var _ = require('lodash');
 // A trading pair that we can shift between
 var pairSchema = new mongoose.Schema({
   // Pair of the shift (e.g. ethbtc means it will shift from ETH to BTC)
-  pair: { type: String },
+  pair: { type: String, unique: true },
 
   // Rate of the pair
   rate: { type: Number }
