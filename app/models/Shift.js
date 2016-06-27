@@ -9,6 +9,9 @@ var reasons = ['waiting', 'mismatchedamount'];
 
 // A shift represents a trade request
 var shiftSchema = new mongoose.Schema({
+  // The pair (in string) e.g. ethbtc, btceth
+  pair: { type: String },
+
   // Rate of the shift, e.g. for ethbtc it's going to be number of btc that 1 eth will buy
   rate: { type: Number },
 

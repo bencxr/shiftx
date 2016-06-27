@@ -15,7 +15,7 @@ var Pair = require('../models/Pair');
 exports.newShift = co(function *newShift(req, res) {
   var pairId = req.body.pair; // TODO better sanitation
 
-  var mongoPair = yield Pair.findOne({ _id: pairId });
+  var mongoPair = yield Pair.findOne({ pair: pairId });
   if (!mongoPair) {
     throw api.Error(400, 'pair not found');
   }
