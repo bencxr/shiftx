@@ -42,12 +42,10 @@ exports.newShift = co(function *newShift(req, res) {
     return Shift.create(shiftObject);
   } else if (mongoPair.pair === 'ethbtc') {
     var wallet = yield bitgo.eth().wallets().generateWallet({ label: 'Ether Receptable', passphrase: 'secretbitgopw' });
-    var depositAddress = wallet.wallet.id();
 
-    shiftObject.depositAddress = depositAddress;
+    shiftObject.depositAddress = wallet.wallet.id();
     return Shift.create(shiftObject);
   }
-
 });
 
 exports.getShift = co(function *getShift(req, res) {
