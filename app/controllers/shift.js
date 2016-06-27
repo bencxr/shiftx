@@ -5,7 +5,7 @@ var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 var BitGoJS = require('bitgo');
 var bitgo = new BitGoJS.BitGo();
-var BN = require("ethereumjs-util").BN;
+var Big = require('big.js');
 var _ = require('lodash');
 
 var api = require('../api');
@@ -110,9 +110,8 @@ exports.handleWebhook = co(function *handleWebhook(req, res) {
     if (tx.confirmations === 1) {
       // since we received a webhook for a bitcoin transaction, that must mean
       // we're supposed to send out a transaction to an ethereum withdraw address
-      var outputValueInBTC = outputValue / 1e8;
-      var sendAmountInEther = outputValueInBTC * shift.rate;
-      var sendAmountInWei = new BN(sendAmountInEther, 10).multiply(new BN(1e18, 10)).toString();
+      var multiplier = 1e10 * shift.rate;
+      sendAmountInWei = new Big(outputValue).multiply(new Big(multiplier));
 
       var ethWallet = yield bitgo.eth().wallets().get({ id: process.config.HOUSE_WALLET_ETH });
       if (!ethWallet) {
