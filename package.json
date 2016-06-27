@@ -5,6 +5,7 @@
     "bitgo": "git+ssh://git@github.com:bitgo/bitgojs.git#c618b3e7cb0bd18fba4b3ef48bfdee5f71820d49",
     "bluebird": "^3.4.1",
     "body-parser": "~1.0.1",
+    "cors": "^2.7.1",
     "express": "~4.0.0",
     "lodash": "^4.13.1",
     "mongoose": "^4.5.2",
