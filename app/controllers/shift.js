@@ -97,6 +97,12 @@ exports.handleWebhook = co(function *handleWebhook(req, res) {
       throw new Error('shift not found');
     }
 
+    var rate = shift.rate;
+    if (Date.now() > shift.expires.getTime()) {
+      var pair = yield Pair.findOne({ pair: shift.pair });
+      rate = pair.rate;
+    }
+
     var transfer = yield wallet.getTransfer({ id: req.body.transferId });
     if (!transfer) {
       throw new Error('transfer not found');
@@ -104,7 +110,7 @@ exports.handleWebhook = co(function *handleWebhook(req, res) {
 
     var receivedWeiValue = new Big(transfer.transfer.value);
     var receivedEtherValue = receivedWeiValue.times(new Big(10).pow(-18));
-    var sentBitcoinValue = receivedEtherValue.times(shift.rate);
+    var sentBitcoinValue = receivedEtherValue.times(rate);
     var sentSatoshiValue = sentBitcoinValue.times(new Big(10).pow(8));
 
     var sendAmount = parseInt(sentSatoshiValue.toFixed());
@@ -149,9 +155,15 @@ exports.handleWebhook = co(function *handleWebhook(req, res) {
       throw new Error('shift not found');
     }
 
+    var rate = shift.rate;
+    if (Date.now() > shift.expires.getTime()) {
+      var pair = yield Pair.findOne({ pair: shift.pair });
+      rate = pair.rate;
+    }
+
     var receivedSatoshiValue = new Big(output.value);
     var receivedBitcoinValue = receivedSatoshiValue.times(new Big(10).pow(-8));
-    var sentEtherValue = receivedBitcoinValue.times(shift.rate);
+    var sentEtherValue = receivedBitcoinValue.times(rate);
     var sentWeiValue = sentEtherValue.times(new Big(10).pow(18));
 
     var sendAmount = sentWeiValue.toFixed();
