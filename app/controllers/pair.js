@@ -4,7 +4,7 @@ var request = require('superagent');
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 var KrakenClient = require('kraken-api');
-var kraken = new KrakenClient(process.env.KRAKEN_API_CLIENT, process.env.KRAKEN_API_SECRET);
+var kraken = Promise.promisifyAll(new KrakenClient(process.env.KRAKEN_API_CLIENT, process.env.KRAKEN_API_SECRET));
 
 var api = require('../api');
 var Pair = require('../models/Pair');
@@ -40,30 +40,25 @@ exports.createPair = co(function *createPair(req) {
 });
 
 exports.refreshPair = co(function *refreshPair(req, res) {
-  kraken.api('Ticker', {"pair": 'ETHXBT'}, function(error, data) {
-    if (error) {
-      throw error;
-    }
+  var data = yield kraken.apiAsync('Ticker', {"pair": 'ETHXBT'});
 
-    var ask = data.result.XETHXXBT.a[0]; // how much Ether Kraken asks from us for 1 BTC
-    var bid = data.result.XETHXXBT.b[0]; // how much Ether Kraken offers us for 1 BTC
+  var ask = data.result.XETHXXBT.a[0]; // how much Ether Kraken asks from us for 1 BTC
+  var bid = data.result.XETHXXBT.b[0]; // how much Ether Kraken offers us for 1 BTC
 
-    // BTC -> ETH: user wants to buy Ethereum for one BTC
-    // i. e., user is selling BTC to us
-    // Kraken offers the bid price for sale
-    var btceth = parseFloat(bid);
-    var btcethPromise = Pair.update({ pair: 'btceth' }, { rate: bid }, { upsert: true });
+  // BTC -> ETH: user wants to buy Ethereum for one BTC
+  // i. e., user is selling BTC to us
+  // Kraken offers the bid price for sale
+  var btceth = parseFloat(bid);
+  var btcethPromise = Pair.update({ pair: 'btceth' }, { rate: bid }, { upsert: true });
 
-    // ETH -> BTC: user wants to buy BTC for one Ether
-    // i. e., user is buying BTC from us
-    // Kraken asks for ask amount of Ether for one BTC
-    var ethbtc = 1.0/parseFloat(ask);
-    var ethbtcPromise = yield Pair.update({ pair: 'ethbtc' }, { rate: ethbtc }, { upsert: true });
+  // ETH -> BTC: user wants to buy BTC for one Ether
+  // i. e., user is buying BTC from us
+  // Kraken asks for ask amount of Ether for one BTC
+  var ethbtc = 1.0/parseFloat(ask);
+  var ethbtcPromise = Pair.update({ pair: 'ethbtc' }, { rate: ethbtc }, { upsert: true });
 
-    // yield them at once to pretend there's atomicity, though there's really not
-    yield btcethPromise;
-    yield ethbtcPromise;
+  // yield them at once to pretend there's atomicity, though there's really not
+  yield btcethPromise;
+  yield ethbtcPromise;
 
-  });
-  return {};
 });

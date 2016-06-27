@@ -3,7 +3,7 @@ var path = require('path');
 var logger = require('morgan');
 var bodyParser = require('body-parser');
 var routes = require('./app/routes');
-var cors = require('cors')
+var cors = require('cors');
 
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/shiftx'); // connect to our database
