@@ -1,1 +1,22 @@
-hello there
+<html ng-app="shiftX">
+	<head>
+		<link rel="stylesheet" href="css/base.css">
+		<!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+		<!-- Latest compiled and minified JavaScript -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.4/angular.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.0rc1/angular-route.min.js"></script>
+		<script src="js/shiftx.js"></script> <!-- load our main application -->
+		<meta charset="utf-8">
+		<base href="/">
+	</head>
+	<body ng-controller="mainController">
+		<div class="mainContainer">
+			<h1>Welcome to ShiftX! :)</h1>
+			<div ng-view></div>
+		</div>
+	</body>
+</html>
+
