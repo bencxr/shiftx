@@ -5,6 +5,8 @@ var bodyParser = require('body-parser');
 var routes = require('./app/routes');
 var cors = require('cors');
 
+require('./config.js');
+
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/shiftx'); // connect to our database
 

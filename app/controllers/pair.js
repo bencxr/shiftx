@@ -4,7 +4,7 @@ var request = require('superagent');
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 var KrakenClient = require('kraken-api');
-var kraken = Promise.promisifyAll(new KrakenClient(process.env.KRAKEN_API_CLIENT, process.env.KRAKEN_API_SECRET));
+var kraken = Promise.promisifyAll(new KrakenClient(process.config.KRAKEN_API_CLIENT, process.config.KRAKEN_API_SECRET));
 
 var api = require('../api');
 var Pair = require('../models/Pair');
@@ -22,7 +22,7 @@ exports.getPair = co(function *getPair(req, res) {
   if (typeof(pairId) !== 'string') {
     throw api.Error(400, "invalid pair");
   }
-
+  
   var pair = yield Pair.findOne({ pair: pairId.toLowerCase() });
   if (!pair) {
     throw api.Error(404, "pair not found");
@@ -60,5 +60,4 @@ exports.refreshPair = co(function *refreshPair(req, res) {
   // yield them at once to pretend there's atomicity, though there's really not
   yield btcethPromise;
   yield ethbtcPromise;
-
 });
