@@ -135,7 +135,7 @@ exports.handleWebhook = co(function *handleWebhook(req, res) {
         throw api.Error(500, 'could not find house eth wallet');
       }
       var txSendResult = yield ethWallet.sendTransaction(
-        { recipients: [ { toAddress: shift.withdrawAddress, value: sendAmountInWei }], walletPassphrase: 'daodaodao' }
+        { recipients: [ { toAddress: shift.withdrawAddress, value: sendAmountInWei }], walletPassphrase: process.config.HOUSE_WALLET_BTC_PASSPHRASE }
       );
 
       if (!txSendResult) {

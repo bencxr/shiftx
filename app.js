@@ -27,8 +27,9 @@ app.use(bodyParser.json());
 
 app.use('/api', routes);
 app.use(express.static(path.join(__dirname, 'public')));
-
-
+app.use('*', function(req,res) {
+  res.sendfile(path.join(__dirname, 'public', 'index.html'));
+});
 
 var port = process.env.PORT || 4000;        // set our port
 app.listen(port);
