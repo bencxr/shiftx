@@ -45,7 +45,7 @@ shiftX.controller('mainController', ['$rootScope', '$scope', '$http', '$location
         .success(function(data) {
             $rootScope.id = data.id;
             console.log(data);
-            $location.path('/shift/'+ $rootScope.id);
+            $location.path('/'+ $rootScope.id);
         })
         .error(function(data) {
             console.log('Error: ' + data);
@@ -55,24 +55,23 @@ shiftX.controller('mainController', ['$rootScope', '$scope', '$http', '$location
     getRate();
 }]);
 
-shiftX.controller('shiftController', ['$rootScope', '$scope', '$http', '$location', function($rootScope, $scope, $http, $location) {
+shiftX.controller('shiftController', ['$rootScope', '$scope', '$http', '$location', '$interval', function($rootScope, $scope, $http, $location, $interval) {
 
     $scope.conversionDirection = "bitcoin";
-
     var getIdFromUrl = function() {
-        var url = $location.path().split('/');
-        var curIdIdx = url.indexOf("shift") + 1;
-        return url[curIdIdx];
+        var urlArray = $location.path().split('/');
+        return urlArray[1];
     }
+    var id = getIdFromUrl();
+    var url = 'http://localhost:4000/api/shift/' + id;
 
-    function getConversion() {
-        var id = getIdFromUrl();
-        var url = 'http://localhost:4000/api/shift/' + id;
+    var refreshData = function() {
         $http.get(url)
         .success(function(data) {
             $rootScope.expires = moment(data.expires).format('MMMM Do YYYY, h:mm:ss A');
             $rootScope.depositAddress = data.depositAddress;
             // change conversion direction here
+            // Make changes so that it reads new data and changes html
             console.log(data);
         })
         .error(function(data) {
@@ -80,9 +79,17 @@ shiftX.controller('shiftController', ['$rootScope', '$scope', '$http', '$locatio
             // just redirect to home page incase of error (possibly cause of wrong id)
             //$location.path('/');
         });
-    }
+    };
+    refreshData();
+    var promise = $interval(refreshData, 5000);
 
-    getConversion();
+    // Cancel interval on page changes
+    $scope.$on('$destroy', function(){
+        if (angular.isDefined(promise)) {
+            $interval.cancel(promise);
+            promise = undefined;
+        }
+    });
 }]);
 
 
@@ -97,7 +104,7 @@ shiftX.config(function($routeProvider, $locationProvider) {
         })
 
         // route for the home page
-        .when('/shift/:id', {
+        .when('/:id', {
             templateUrl : 'templates/shift.html',
             controller  : 'shiftController'
         });
