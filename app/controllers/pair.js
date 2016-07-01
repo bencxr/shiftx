@@ -26,8 +26,8 @@ exports.getPair = co(function *getPair(req, res) {
 exports.refreshPairs = co(function *refreshPairs() {
   var data = yield kraken.apiAsync('Ticker', {"pair": 'ETHXBT'});
 
-  var ask = data.result.XETHXXBT.a[0]; // how much Ether Kraken asks from us for 1 BTC
-  var bid = data.result.XETHXXBT.b[0]; // how much Ether Kraken offers us for 1 BTC
+  var ask = data.result.XETHXXBT.a[0]; // how much BTC Kraken asks from us for 1 Ether
+  var bid = data.result.XETHXXBT.b[0]; // how much BTC Kraken offers us for 1 Ether
 
   // BTC -> ETH: user wants to buy Ethereum for one BTC
   // i. e., user is selling BTC to us

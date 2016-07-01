@@ -42,7 +42,12 @@ exports.newShift = co(function *newShift(req, res) {
       throw api.Error(500, 'error fetching bitgo wallet');
     }
     var depositAddress = yield wallet.createAddress({ chain: 0 }); // TODO check return value
-    var webhook = yield wallet.addWebhook({ type: 'transaction', url: req.root + 'api/webhook' });
+    try {
+      var webhook = yield wallet.addWebhook({ type: 'transaction', url: req.root + 'api/webhook' });
+    } catch (e) {
+      // webhook already exists
+      // TODO: check that that's the actual error
+    }
 
     shiftObject.depositAddress = depositAddress.address;
     return Shift.create(shiftObject);
@@ -51,14 +56,19 @@ exports.newShift = co(function *newShift(req, res) {
       throw api.Error(400, 'invalid withdraw address');
     }
 
-    var generationResult = yield bitgo.eth().wallets().generateWallet({
-      label: 'Ether Receptacle',
-      passphrase: process.config.HOUSE_WALLET_ETH_PASSPHRASE
-    });
-    var wallet = generationResult.wallet;
-    var webhook = yield wallet.addWebhook({ type: 'transfer', url: req.root + 'api/webhook' });
+    var wallet = yield bitgo.eth().wallets().get({ id: process.config.HOUSE_WALLET_ETH });
+    if (!wallet) {
+      throw api.Error(500, 'error fetching bitgo wallet');
+    }
+    var depositAddress = yield wallet.createAddress(); // TODO check return value
+    try {
+      var webhook = yield wallet.addWebhook({ type: 'transfer', url: req.root + 'api/webhook' });
+    } catch (e) {
+      // webhook already exists
+      // TODO: check that that's the actual error
+    }
 
-    shiftObject.depositAddress = wallet.id();
+    shiftObject.depositAddress = depositAddress.address;
     return Shift.create(shiftObject);
   }
 });
@@ -92,7 +102,13 @@ exports.handleWebhook = co(function *handleWebhook(req, res) {
       throw new Error('wallet not found');
     }
 
-    var shift = yield Shift.findOneAndUpdate({ depositAddress: wallet.id(), state: 'new' }, { state: 'unconfirmed' });
+    var transfer = yield wallet.getTransfer({ id: req.body.transferId });
+    if (!transfer) {
+      throw new Error('transfer not found');
+    }
+
+    var receiveAddress = transfer.transfer.from;
+    var shift = yield Shift.findOneAndUpdate({ depositAddress: receiveAddress, state: 'new' }, { state: 'unconfirmed' });
     if (!shift) {
       throw new Error('shift not found');
     }
@@ -103,10 +119,7 @@ exports.handleWebhook = co(function *handleWebhook(req, res) {
       rate = pair.rate;
     }
 
-    var transfer = yield wallet.getTransfer({ id: req.body.transferId });
-    if (!transfer) {
-      throw new Error('transfer not found');
-    }
+    
 
     var receivedWeiValue = new Big(transfer.transfer.value);
     var receivedEtherValue = receivedWeiValue.times(new Big(10).pow(-18));
